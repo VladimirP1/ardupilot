@@ -26,6 +26,8 @@ public:
 
     void     register_timer_process(AP_HAL::MemberProc);
     bool     register_timer_process(AP_HAL::MemberProc, uint8_t);
+    void     register_timer1_process(AP_HAL::MemberProc);
+    bool     register_timer1_process(AP_HAL::MemberProc, uint8_t);
     void     register_io_process(AP_HAL::MemberProc);
     void     suspend_timer_procs();
     void     resume_timer_procs();
@@ -74,7 +76,12 @@ private:
     uint8_t _num_timer_procs;
     volatile bool _in_timer_proc;
     uint8_t _timeslices_count;
-
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+    AP_HAL::MemberProc _timer1_proc[LINUX_SCHEDULER_MAX_TIMER_PROCS];
+    uint8_t _num_timer1_procs;
+    volatile bool _in_timer1_proc;
+    uint8_t _timeslices_count1;
+#endif
     struct timesliced_proc {
         AP_HAL::MemberProc proc;
         uint8_t timeslot;
@@ -83,16 +90,26 @@ private:
     timesliced_proc _timesliced_proc[LINUX_SCHEDULER_MAX_TIMESLICED_PROCS];
     uint8_t _num_timesliced_procs;
     uint8_t _max_freq_div;
-
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+    timesliced_proc _timesliced_proc1[LINUX_SCHEDULER_MAX_TIMESLICED_PROCS];
+    uint8_t _num_timesliced_procs1;
+    uint8_t _max_freq_div1;
+#endif
     AP_HAL::MemberProc _io_proc[LINUX_SCHEDULER_MAX_IO_PROCS];
     uint8_t _num_io_procs;
 
     SchedulerThread _timer_thread{FUNCTOR_BIND_MEMBER(&Scheduler::_timer_task, void), *this};
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+    SchedulerThread _timer1_thread{FUNCTOR_BIND_MEMBER(&Scheduler::_timer1_task, void), *this};
+#endif
     SchedulerThread _io_thread{FUNCTOR_BIND_MEMBER(&Scheduler::_io_task, void), *this};
     SchedulerThread _rcin_thread{FUNCTOR_BIND_MEMBER(&Scheduler::_rcin_task, void), *this};
     SchedulerThread _uart_thread{FUNCTOR_BIND_MEMBER(&Scheduler::_uart_task, void), *this};
     SchedulerThread _tonealarm_thread{FUNCTOR_BIND_MEMBER(&Scheduler::_tonealarm_task, void), *this};
 
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+    void _timer1_task();
+#endif
     void _timer_task();
     void _io_task();
     void _rcin_task();
@@ -107,5 +124,8 @@ private:
     uint64_t _last_stack_debug_msec;
 
     Semaphore _timer_semaphore;
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+    Semaphore _timer1_semaphore;
+#endif
     Semaphore _io_semaphore;
 };

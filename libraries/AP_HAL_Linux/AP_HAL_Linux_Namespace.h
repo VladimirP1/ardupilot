@@ -28,6 +28,7 @@ namespace Linux {
     class RCInput_AioPRU;
     class RCInput_RPI;
     class RCInput_Raspilot;
+    class RCInput_HRPI;
     class RCInput_Navio2;
     class RCInput_ZYNQ;
     class RCInput_UART;
@@ -41,6 +42,7 @@ namespace Linux {
     class RCOutput_Bebop;
     class RCOutput_Sysfs;
     class RCOutput_QFLIGHT;
+    class RCOutput_ServoBlaster;
     class Semaphore;
     class Scheduler;
     class Util;

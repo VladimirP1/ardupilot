@@ -30,6 +30,7 @@ using namespace Linux;
 extern const AP_HAL::HAL& hal;
 
 #define APM_LINUX_TIMER_PRIORITY        15
+#define APM_LINUX_TIMER1_PRIORITY        15
 #define APM_LINUX_UART_PRIORITY         14
 #define APM_LINUX_RCIN_PRIORITY         13
 #define APM_LINUX_MAIN_PRIORITY         12
@@ -37,12 +38,17 @@ extern const AP_HAL::HAL& hal;
 #define APM_LINUX_IO_PRIORITY           10
 
 #define APM_LINUX_TIMER_RATE            1000
+#define APM_LINUX_TIMER1_RATE            1000
 #define APM_LINUX_UART_RATE             100
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO ||    \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBRAIN2 || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI
 #define APM_LINUX_RCIN_RATE             2000
+#define APM_LINUX_TONEALARM_RATE        100
+#define APM_LINUX_IO_RATE               50
+#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+#define APM_LINUX_RCIN_RATE             100
 #define APM_LINUX_TONEALARM_RATE        100
 #define APM_LINUX_IO_RATE               50
 #else
@@ -73,6 +79,7 @@ void Scheduler::init()
         uint32_t rate;
     } sched_table[] = {
         SCHED_THREAD(timer, TIMER),
+        SCHED_THREAD(timer1, TIMER1),
         SCHED_THREAD(uart, UART),
         SCHED_THREAD(rcin, RCIN),
         SCHED_THREAD(tonealarm, TONEALARM),
@@ -165,7 +172,6 @@ void Scheduler::register_delay_callback(AP_HAL::Proc proc,
     _delay_cb = proc;
     _min_delay_cb_ms = min_time_ms;
 }
-
 void Scheduler::register_timer_process(AP_HAL::MemberProc proc)
 {
     for (uint8_t i = 0; i < _num_timer_procs; i++) {
@@ -194,7 +200,30 @@ bool Scheduler::register_timer_process(AP_HAL::MemberProc proc,
     register_timer_process(proc);
     return false;
 }
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+void Scheduler::register_timer1_process(AP_HAL::MemberProc proc)
+{
+    for (uint8_t i = 0; i < _num_timer1_procs; i++) {
+        if (_timer1_proc[i] == proc) {
+            return;
+        }
+    }
 
+    if (_num_timer1_procs < LINUX_SCHEDULER_MAX_TIMER_PROCS) {
+        _timer1_proc[_num_timer1_procs] = proc;
+        _num_timer1_procs++;
+    } else {
+        hal.console->printf("Out of timer processes\n");
+    }
+}
+
+bool Scheduler::register_timer1_process(AP_HAL::MemberProc proc,
+                                       uint8_t freq_div)
+{
+    register_timer1_process(proc);
+    return false;
+}
+#endif
 bool Scheduler::_register_timesliced_proc(AP_HAL::MemberProc proc,
                                           uint8_t freq_div)
 {
@@ -277,7 +306,6 @@ void Scheduler::resume_timer_procs()
 {
     _timer_semaphore.give();
 }
-
 void Scheduler::_timer_task()
 {
     int i;
@@ -335,7 +363,30 @@ void Scheduler::_timer_task()
        */
     _run_uarts();
     RCInput::from(hal.rcin)->_timer_tick();
+
 #endif
+}
+void Scheduler::_timer1_task()
+{
+    int i;
+
+    if (_in_timer1_proc) {
+        return;
+    }
+    _in_timer1_proc = true;
+    if (!_timer1_semaphore.take(0)) {
+        printf("Failed to take timer semaphore in %s\n", __PRETTY_FUNCTION__);
+    }
+    // now call the timer based drivers
+    for (i = 0; i < _num_timer1_procs; i++) {
+        if (_timer1_proc[i]) {
+            _timer1_proc[i]();
+        }
+    }
+    _timer1_semaphore.give();
+
+
+    _in_timer1_proc = false;
 }
 
 void Scheduler::_run_io(void)

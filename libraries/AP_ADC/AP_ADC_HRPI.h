@@ -6,10 +6,11 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_ADC_report_s.h"
 
-class AP_ADC_ADS1115
+
+class AP_ADC_HRPI
 {
 public:
-    AP_ADC_ADS1115();
+    AP_ADC_HRPI();
 
     bool init();
     size_t read(adc_report_s *report, size_t length) const;

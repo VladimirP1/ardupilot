@@ -22,7 +22,6 @@ extern const AP_HAL::HAL& hal;
 #define MPU6000_DRDY_PIN MINNOW_GPIO_I2S_CLK
 #endif
 #endif
-
 // MPU 6000 registers
 #define MPUREG_XG_OFFS_TC                       0x00
 #define MPUREG_YG_OFFS_TC                       0x01
@@ -197,7 +196,6 @@ extern const AP_HAL::HAL& hal;
 #define MPU6000_MAX_FIFO_SAMPLES 3
 #endif
 #define MAX_DATA_READ (MPU6000_MAX_FIFO_SAMPLES * MPU6000_SAMPLE_SIZE)
-
 #define int16_val(v, idx) ((int16_t)(((uint16_t)v[2*idx] << 8) | v[2*idx+1]))
 #define uint16_val(v, idx)(((uint16_t)v[2*idx] << 8) | v[2*idx+1])
 
@@ -252,8 +250,13 @@ AP_InertialSensor_Backend *AP_InertialSensor_MPU6000::probe(AP_InertialSensor &i
 AP_InertialSensor_Backend *AP_InertialSensor_MPU6000::probe(AP_InertialSensor &imu,
                                                             AP_HAL::OwnPtr<AP_HAL::SPIDevice> dev)
 {
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
+    AP_InertialSensor_MPU6000 *sensor =
+        new AP_InertialSensor_MPU6000(imu, std::move(dev), BUS_TYPE_SPI, true, 0x80);
+#else
     AP_InertialSensor_MPU6000 *sensor =
         new AP_InertialSensor_MPU6000(imu, std::move(dev), BUS_TYPE_SPI, false, 0x80);
+#endif
     if (!sensor || !sensor->_init()) {
         delete sensor;
         return nullptr;
@@ -374,7 +377,7 @@ void AP_InertialSensor_MPU6000::start()
     hal.scheduler->resume_timer_procs();
 
     // start the timer process to read samples
-    hal.scheduler->register_timer_process(
+    hal.scheduler->register_timer1_process(
         FUNCTOR_BIND_MEMBER(&AP_InertialSensor_MPU6000::_poll_data, void));
 }
 
@@ -848,3 +851,4 @@ int AP_MPU6000_AuxiliaryBus::_configure_periodic_read(AuxiliaryBusSlave *slave,
 
     return 0;
 }
+
