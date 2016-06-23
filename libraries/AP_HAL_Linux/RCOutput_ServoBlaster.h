@@ -27,7 +27,7 @@ public:
         bool enabled;
         uint16_t freq_hz;
     };
-    chann ch[8];
+    chann ch[20];
 private:
     const uint8_t _chip;
     const uint8_t _channel_count;

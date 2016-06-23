@@ -47,7 +47,7 @@ void RCInput_HRPI::_poll_data(void)
     }
 
     static int    i = 0;
-    i = (i + 1) % 8;
+    i = (i + 1) % 12;
     uint8_t    a,b;
     if (hal.i2c->readRegisters (8, (i * 2) + 0xA, 1, &a) != 0)
     {
@@ -62,7 +62,7 @@ void RCInput_HRPI::_poll_data(void)
     _chann[i] = (a | (b << 8));
 
     _i2c_sem->give();
-    _update_periods(&_chann[0], (uint8_t)8);
+    _update_periods(&_chann[0], (uint8_t)12);
 
 }
 

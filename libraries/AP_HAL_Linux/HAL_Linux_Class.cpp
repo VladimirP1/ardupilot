@@ -183,7 +183,7 @@ static RCOutput_QFLIGHT rcoutDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO2
 static RCOutput_Sysfs rcoutDriver(0, 14);
 #elif  CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_HRPI
-static RCOutput_ServoBlaster rcoutDriver(0,8);
+static RCOutput_ServoBlaster rcoutDriver(0,13);
 #else
 static Empty::RCOutput rcoutDriver;
 #endif
