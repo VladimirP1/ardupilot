@@ -93,8 +93,6 @@ void AP_ADC_HRPI::_update()
     float sample = _convert_register_data_to_mv((a & 0xff) | ((b & 0xff) << 8));
     _samples[_channel_to_read].data = sample;
     _samples[_channel_to_read].id = _channel_to_read;
-//if(_channel_to_read==1)
-    printf("CH%d\t%f\n",_channel_to_read,sample);
     _channel_to_read = (_channel_to_read + 1) % _channels_number;
 
     _i2c_sem->give();

@@ -11,7 +11,7 @@ public:
 private:
     uint32_t _last_timer;
     uint16_t
-    _chann[8];
+    _chann[12];
 
     AP_HAL::Semaphore *_i2c_sem;
     
